@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitalScore — Member Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --green:      #1a4731;
+      --green-mid:  #2d6a4f;
+      --green-light:#40916c;
+      --green-pale: #f0f7f4;
+      --green-faint:#e8f4ee;
+      --amber:      #b45309;
+      --amber-pale: #fef3c7;
+      --red:        #991b1b;
+      --red-pale:   #fef2f2;
+      --stone:      #f7f4f0;
+      --stone-mid:  #e8e3dc;
+      --border:     #e2ddd7;
+      --white:      #ffffff;
+      --ink:        #1a1a1a;
+      --ink-mid:    #3d3d3d;
+      --ink-light:  #6b6b6b;
+      --ink-faint:  #9a9a9a;
+      --radius:     6px;
+      --shadow:     0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--stone);
+      color: var(--ink-mid);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    h1,h2,h3,h4 { font-family: 'Libre Baskerville', Georgia, serif; color: var(--ink); font-weight: 400; line-height: 1.2; }
+    input, select, button { font-family: 'Source Sans 3', sans-serif; }
+
+    /* SIDEBAR */
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 232px; flex-shrink: 0;
+      background: var(--green);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; height: 100vh;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      padding: 26px 22px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .wordmark {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 1.15rem; color: white;
+      display: flex; align-items: center; gap: 9px;
+    }
+    .logo-dot {
+      width: 22px; height: 22px; background: rgba(255,255,255,0.18);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 13px; color: white; font-style: normal;
+    }
+    .sidebar-member {
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .member-avatar {
+      width: 40px; height: 40px; background: rgba(255,255,255,0.14);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; margin-bottom: 9px;
+    }
+    .member-name { font-size: 0.92rem; color: white; font-weight: 500; }
+    .member-plan { font-size: 0.76rem; color: rgba(255,255,255,0.48); margin-top: 2px; }
+    .sidebar-nav { padding: 14px 0; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 22px; color: rgba(255,255,255,0.6);
+      font-size: 0.86rem; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.1); color: white; border-left-color: rgba(255,255,255,0.55); }
+    .nav-item .ni { font-size: 0.95rem; width: 18px; text-align: center; }
+    .sidebar-footer {
+      padding: 18px 22px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.75rem; color: rgba(255,255,255,0.3); line-height: 1.6;
+    }
+
+    /* MAIN */
+    .main { margin-left: 232px; flex: 1; }
+    .topbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 36px;
+      height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 5;
+    }
+    .topbar-left { font-size: 0.86rem; color: var(--ink-light); }
+    .topbar-left strong { color: var(--ink); font-weight: 600; }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .period-badge {
+      background: var(--green-pale); color: var(--green);
+      border: 1px solid rgba(26,71,49,0.18);
+      padding: 4px 13px; border-radius: 50px;
+      font-size: 0.78rem; font-weight: 600;
+    }
+    .sync-btn {
+      background: none; border: 1px solid var(--border);
+      color: var(--ink-mid); padding: 5px 13px;
+      border-radius: var(--radius); font-size: 0.8rem;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    }
+    .sync-btn:hover { border-color: var(--green); color: var(--green); }
+
+    .content { padding: 32px 36px; max-width: 1160px; }
+
+    /* SCORE STRIP */
+    .score-strip {
+      display: grid; grid-template-columns: auto 1fr auto;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden; margin-bottom: 26px;
+      box-shadow: var(--shadow);
+    }
+    .score-main {
+      display: flex; align-items: center; gap: 28px;
+      padding: 28px 36px;
+      border-right: 1px solid var(--border);
+    }
+    .ring-wrap { position: relative; width: 96px; height: 96px; flex-shrink: 0; }
+    .ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ring-track { fill: none; stroke: var(--stone-mid); stroke-width: 7; }
+    .ring-prog {
+      fill: none; stroke: var(--green);
+      stroke-width: 7; stroke-linecap: butt;
+      stroke-dasharray: 271;
+      stroke-dashoffset: 70;
+      transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);
+    }
+    .ring-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .ring-num { font-family: 'Libre Baskerville', serif; font-size: 1.75rem; color: var(--ink); line-height: 1; }
+    .ring-lbl { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-top: 2px; }
+    .score-info h2 { font-size: 1.4rem; margin-bottom: 4px; }
+    .score-tier {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.79rem; font-weight: 600; padding: 3px 11px;
+      border-radius: 50px; margin-bottom: 7px;
+    }
+    .tier-gold   { background: #fef3c7; color: #92610c; border: 1px solid #f59e0b30; }
+    .tier-silver { background: #f1f5f9; color: #475569; border: 1px solid #94a3b830; }
+    .tier-green  { background: var(--green-pale); color: var(--green); border: 1px solid rgba(26,71,49,0.18); }
+    .tier-bronze { background: #fdf4ec; color: #92610c; border: 1px solid #f5a62330; }
+    .score-sub { font-size: 0.84rem; color: var(--ink-light); }
+
+    .score-savings {
+      padding: 28px 36px; display: flex; flex-direction: column; justify-content: center; gap: 4px;
+      border-right: 1px solid var(--border); min-width: 230px;
+    }
+    .sav-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; margin-bottom: 3px; }
+    .sav-amount { font-family: 'Libre Baskerville', serif; font-size: 2.3rem; color: var(--green); line-height: 1; }
+    .sav-sub { font-size: 0.82rem; color: var(--ink-light); }
+    .sav-base { font-size: 0.78rem; color: var(--ink-faint); margin-top: 7px; }
+    .sav-base s { color: var(--ink-faint); }
+
+    .score-next { padding: 22px 28px; display: flex; flex-direction: column; justify-content: center; gap: 9px; min-width: 210px; }
+    .next-lbl { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; margin-bottom: 2px; }
+    .next-row { display: flex; align-items: center; gap: 8px; font-size: 0.83rem; color: var(--ink-mid); }
+    .next-icon { width: 18px; text-align: center; font-size: 0.9rem; }
+    .next-hi { font-weight: 600; color: var(--ink); }
+    .next-hi.green { color: var(--green); }
+
+    /* GRID */
+    .dash-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 26px; }
+    .dash-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; margin-bottom: 26px; }
+    .span2 { grid-column: span 2; }
+    .card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 26px;
+      box-shadow: var(--shadow);
+    }
+    .card-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .card-title { font-size: 0.98rem; }
+    .card-sub { font-size: 0.78rem; color: var(--ink-faint); margin-top: 3px; font-family: 'Source Sans 3', sans-serif; }
+    .cbadge { font-size: 0.73rem; font-weight: 600; padding: 3px 10px; border-radius: 50px; }
+    .cbadge-green  { background: var(--green-pale); color: var(--green); }
+    .cbadge-amber  { background: var(--amber-pale); color: var(--amber); }
+    .cbadge-red    { background: var(--red-pale);   color: var(--red);   }
+
+    /* MARKERS */
+    .markers-list { display: flex; flex-direction: column; gap: 16px; }
+    .marker { display: grid; grid-template-columns: 28px 1fr 90px; align-items: center; gap: 12px; }
+    .m-icon { font-size: 1.1rem; text-align: center; }
+    .m-name { font-size: 0.86rem; color: var(--ink); font-weight: 500; margin-bottom: 5px; }
+    .m-bar-wrap { height: 4px; background: var(--stone-mid); border-radius: 2px; overflow: hidden; }
+    .m-bar-fill { height: 100%; border-radius: 2px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+    .fill-g { background: var(--green-light); }
+    .fill-a { background: #f59e0b; }
+    .fill-r { background: #ef4444; }
+    .m-right { text-align: right; }
+    .m-val { font-size: 0.88rem; font-weight: 600; color: var(--ink); display: block; }
+    .m-tgt { font-size: 0.72rem; color: var(--ink-faint); }
+    .m-st  { font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 50px; margin-top: 3px; display: inline-block; }
+    .st-met   { background: var(--green-pale); color: var(--green); }
+    .st-close { background: var(--amber-pale); color: var(--amber); }
+    .st-miss  { background: var(--red-pale);   color: var(--red);   }
+
+    /* UPLOAD */
+    .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .upl {
+      border: 1.5px dashed var(--border); border-radius: var(--radius);
+      padding: 16px 12px; text-align: center; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .upl:hover { border-color: var(--green); background: var(--green-faint); }
+    .upl.done  { border-style: solid; border-color: var(--green); background: var(--green-pale); }
+    .upl-icon { font-size: 1.4rem; margin-bottom: 5px; }
+    .upl-name { font-size: 0.8rem; font-weight: 600; color: var(--ink); }
+    .upl-hint { font-size: 0.72rem; color: var(--ink-faint); }
+    .upl-ok   { font-size: 0.75rem; font-weight: 600; color: var(--green); margin-top: 3px; }
+    .manual-sec { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .manual-lbl { font-size: 0.76rem; font-weight: 600; color: var(--ink-light); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .flds { display: flex; flex-direction: column; gap: 9px; }
+    .frow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+    .flbl { font-size: 0.83rem; color: var(--ink-mid); }
+    .finp {
+      width: 88px; padding: 6px 9px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 0.86rem; color: var(--ink); text-align: right; outline: none;
+      transition: border-color 0.15s;
+    }
+    .finp:focus { border-color: var(--green); }
+    .btn-calc {
+      width: 100%; margin-top: 14px;
+      background: var(--green); color: white;
+      border: none; padding: 11px; border-radius: var(--radius);
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-calc:hover { background: var(--green-mid); }
+
+    /* PROJECTION ROW */
+    .proj-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; margin-bottom: 20px;
+    }
+    .proj-cell { padding: 18px 20px; border-right: 1px solid var(--border); }
+    .proj-cell:last-child { border-right: none; }
+    .proj-lbl { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; margin-bottom: 5px; }
+    .proj-val { font-family: 'Libre Baskerville', serif; font-size: 1.65rem; color: var(--ink); }
+    .proj-val.g { color: var(--green); }
+    .proj-note { font-size: 0.76rem; color: var(--ink-faint); margin-top: 3px; }
+
+    /* BREAKDOWN TABLE */
+    .btable { width: 100%; border-collapse: collapse; }
+    .btable th {
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ink-faint); font-weight: 600;
+      padding: 0 0 10px; border-bottom: 1px solid var(--border); text-align: left;
+    }
+    .btable th:last-child { text-align: right; }
+    .btable td { padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 0.86rem; vertical-align: middle; }
+    .btable tr:last-child td { border-bottom: none; }
+    .btable td:last-child { text-align: right; font-weight: 600; }
+    .tdm { display: flex; align-items: center; gap: 9px; }
+
+    /* REQUIREMENTS */
+    .reqs { display: flex; flex-direction: column; gap: 11px; }
+    .req {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 13px; border-radius: var(--radius); font-size: 0.84rem;
+    }
+    .req.rmet  { background: var(--green-pale); }
+    .req.rmiss { background: var(--amber-pale); }
+    .req-chk { font-size: 0.95rem; flex-shrink: 0; margin-top: 1px; }
+    .req-body strong { color: var(--ink); display: block; font-weight: 600; margin-bottom: 1px; }
+    .req-body span { color: var(--ink-light); font-size: 0.8rem; }
+
+    /* CHART */
+    .chart-wrap { position: relative; height: 210px; }
+    .chart-legend { display: flex; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
+    .leg { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--ink-light); }
+    .leg-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+    /* SECTION HEADING */
+    .sh {
+      font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ink-faint); font-weight: 600; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Source Sans 3', sans-serif;
+    }
+    .sh::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--ink); color: white;
+      padding: 11px 18px; border-radius: var(--radius);
+      font-size: 0.85rem; font-weight: 500;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 0.22s, transform 0.22s;
+      pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 880px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .content { padding: 18px; }
+      .dash-grid, .dash-grid-3 { grid-template-columns: 1fr; }
+      .span2 { grid-column: 1; }
+      .score-strip { grid-template-columns: 1fr; }
+      .score-main, .score-savings { border-right: none; border-bottom: 1px solid var(--border); }
+      .proj-row { grid-template-columns: 1fr; }
+      .proj-cell { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="wordmark"><div class="logo-dot">+</div>VitalScore</div>
+    </div>
+    <div class="sidebar-member">
+      <div class="member-avatar">👵</div>
+      <div class="member-name">Margaret Thompson</div>
+      <div class="member-plan">Humana Medicare Advantage</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active"><span class="ni">🏠</span> Dashboard</div>
+      <div class="nav-item"><span class="ni">📤</span> Upload Activity</div>
+      <div class="nav-item"><span class="ni">📊</span> Score History</div>
+      <div class="nav-item"><span class="ni">💰</span> Savings</div>
+      <div class="nav-item"><span class="ni">🔗</span> Connected Devices</div>
+      <div class="nav-item"><span class="ni">📄</span> Documents</div>
+    </nav>
+    <div class="sidebar-footer">Member ID: VS-2024-7741<br/>Plan Year 2025</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">Welcome back, <strong>Margaret</strong> — Week of Dec 9–15, 2024</div>
+      <div class="topbar-right">
+        <div class="period-badge">Q4 · 2024</div>
+        <button class="sync-btn" onclick="simulateSync()">⟳ Sync Devices</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- SCORE STRIP -->
+      <div class="score-strip">
+        <div class="score-main">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 110 110" class="ring-svg">
+              <circle cx="55" cy="55" r="43" class="ring-track"/>
+              <circle cx="55" cy="55" r="43" class="ring-prog" id="mainRing"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-num" id="mainScore">742</span>
+              <span class="ring-lbl">Vital</span>
+            </div>
+          </div>
+          <div class="score-info">
+            <div class="score-tier tier-gold" id="tierBadge">🥇 Gold Tier</div>
+            <h2>Good Standing</h2>
+            <div class="score-sub">3 of 4 weekly benchmarks met · Updated Dec 15</div>
+          </div>
+        </div>
+
+        <div class="score-savings">
+          <div class="sav-label">This Month's Premium</div>
+          <div class="sav-amount" id="currPremium">$313.28</div>
+          <div class="sav-sub">After VitalScore discount applied</div>
+          <div class="sav-base">Standard rate: <s>$356.00</s> &nbsp;·&nbsp; <strong id="savAmt" style="color:var(--green)">saving $42.72/mo</strong></div>
+        </div>
+
+        <div class="score-next" id="nextPanel">
+          <div class="next-lbl">To Reach Platinum</div>
+          <div class="next-row"><span class="next-icon">🏃</span><span>Exercise: <span class="next-hi">+45 min needed</span></span></div>
+          <div class="next-row"><span class="next-icon">📈</span><span>Score gap: <span class="next-hi">89 pts</span></span></div>
+          <div class="next-row"><span class="next-icon">💰</span><span>Unlocks extra <span class="next-hi green">$21.36/mo</span></span></div>
+        </div>
+      </div>
+
+      <!-- ROW 1: MARKERS + UPLOAD -->
+      <div class="sh">This Week's Health Markers</div>
+      <div class="dash-grid">
+
+        <div class="card">
+          <div class="card-hd">
+            <div><h3 class="card-title">Weekly Activity Report</h3><div class="card-sub">Dec 9 – Dec 15, 2024</div></div>
+            <span class="cbadge cbadge-amber" id="weekBadge">3/4 Met</span>
+          </div>
+          <div class="markers-list">
+            <div class="marker">
+              <div class="m-icon">👟</div>
+              <div><div class="m-name">Daily Steps</div><div class="m-bar-wrap"><div class="m-bar-fill fill-g" id="bar-steps" style="width:82%"></div></div></div>
+              <div class="m-right"><span class="m-val" id="val-steps">7,824</span><span class="m-tgt">Target: 7,000</span><span class="m-st st-met" id="st-steps">✓ Met</span></div>
+            </div>
+            <div class="marker">
+              <div class="m-icon">💤</div>
+              <div><div class="m-name">Avg Sleep / Night</div><div class="m-bar-wrap"><div class="m-bar-fill fill-g" id="bar-sleep" style="width:88%"></div></div></div>
+              <div class="m-right"><span class="m-val" id="val-sleep">7.4 hrs</span><span class="m-tgt">Target: 7h</span><span class="m-st st-met" id="st-sleep">✓ Met</span></div>
+            </div>
+            <div class="marker">
+              <div class="m-icon">🩺</div>
+              <div><div class="m-name">Avg Blood Pressure</div><div class="m-bar-wrap"><div class="m-bar-fill fill-g" id="bar-bp" style="width:75%"></div></div></div>
+              <div class="m-right"><span class="m-val" id="val-bp">124/79</span><span class="m-tgt">Target: &lt;130/80</span><span class="m-st st-met" id="st-bp">✓ Met</span></div>
+            </div>
+            <div class="marker">
+              <div class="m-icon">🏃</div>
+              <div><div class="m-name">Exercise This Week</div><div class="m-bar-wrap"><div class="m-bar-fill fill-a" id="bar-exercise" style="width:70%"></div></div></div>
+              <div class="m-right"><span class="m-val" id="val-exercise">105 min</span><span class="m-tgt">Target: 150 min</span><span class="m-st st-close" id="st-exercise">45 min short</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <div><h3 class="card-title">Upload Activity Data</h3><div class="card-sub">Connect a device or enter manually below</div></div>
+          </div>
+          <div class="upload-grid">
+            <div class="upl" id="up-apple" onclick="handleUpload('apple','Apple Health')">
+              <div class="upl-icon">🍎</div>
+              <div class="upl-name">Apple Health</div>
+              <div class="upl-hint">.xml export</div>
+              <div class="upl-ok" id="ok-apple"></div>
+            </div>
+            <div class="upl" id="up-fitbit" onclick="handleUpload('fitbit','Fitbit')">
+              <div class="upl-icon">📟</div>
+              <div class="upl-name">Fitbit</div>
+              <div class="upl-hint">.csv export</div>
+              <div class="upl-ok" id="ok-fitbit"></div>
+            </div>
+            <div class="upl" id="up-strava" onclick="handleUpload('strava','Strava')">
+              <div class="upl-icon">🚴</div>
+              <div class="upl-name">Strava</div>
+              <div class="upl-hint">.gpx / .csv</div>
+              <div class="upl-ok" id="ok-strava"></div>
+            </div>
+            <div class="upl" id="up-garmin" onclick="handleUpload('garmin','Garmin')">
+              <div class="upl-icon">⌚</div>
+              <div class="upl-name">Garmin</div>
+              <div class="upl-hint">.fit / .csv</div>
+              <div class="upl-ok" id="ok-garmin"></div>
+            </div>
+          </div>
+          <div class="manual-sec">
+            <div class="manual-lbl">Or Enter This Week Manually</div>
+            <div class="flds">
+              <div class="frow"><span class="flbl">Avg daily steps</span><input class="finp" type="number" id="in-steps" placeholder="7000" min="0" max="30000"/></div>
+              <div class="frow"><span class="flbl">Avg sleep (hours)</span><input class="finp" type="number" id="in-sleep" placeholder="7.0" step="0.1" min="0" max="14"/></div>
+              <div class="frow"><span class="flbl">Avg systolic BP</span><input class="finp" type="number" id="in-bp" placeholder="124" min="80" max="220"/></div>
+              <div class="frow"><span class="flbl">Exercise (minutes)</span><input class="finp" type="number" id="in-exercise" placeholder="105" min="0" max="1200"/></div>
+            </div>
+            <button class="btn-calc" onclick="recalculate()">Update My VitalScore →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2: FINANCIAL BREAKDOWN -->
+      <div class="sh">Financial Impact</div>
+      <div class="dash-grid">
+
+        <div class="card span2">
+          <div class="card-hd">
+            <div><h3 class="card-title">Premium Savings Breakdown</h3><div class="card-sub">How your VitalScore translates to monthly savings</div></div>
+          </div>
+          <div class="proj-row">
+            <div class="proj-cell">
+              <div class="proj-lbl">Standard Monthly Premium</div>
+              <div class="proj-val">$356.00</div>
+              <div class="proj-note">Without VitalScore enrollment</div>
+            </div>
+            <div class="proj-cell">
+              <div class="proj-lbl">Your Discount</div>
+              <div class="proj-val g" id="discVal">–$42.72</div>
+              <div class="proj-note" id="discDesc">Gold Tier — 3/4 benchmarks met</div>
+            </div>
+            <div class="proj-cell">
+              <div class="proj-lbl">Your Monthly Premium</div>
+              <div class="proj-val g" id="premVal">$313.28</div>
+              <div class="proj-note">Applied next billing cycle</div>
+            </div>
+          </div>
+          <table class="btable">
+            <thead>
+              <tr><th>Health Marker</th><th>Your Result</th><th>Benchmark</th><th>Status</th><th>Points</th></tr>
+            </thead>
+            <tbody id="btBody">
+              <tr>
+                <td><div class="tdm"><span>👟</span> Daily Steps</div></td>
+                <td>7,824 / day</td><td>7,000 / day</td>
+                <td><span class="cbadge cbadge-green">Met</span></td><td>+185</td>
+              </tr>
+              <tr>
+                <td><div class="tdm"><span>💤</span> Sleep</div></td>
+                <td>7.4 hrs</td><td>7.0 hrs</td>
+                <td><span class="cbadge cbadge-green">Met</span></td><td>+185</td>
+              </tr>
+              <tr>
+                <td><div class="tdm"><span>🩺</span> Blood Pressure</div></td>
+                <td>124/79 mmHg</td><td>&lt;130/80</td>
+                <td><span class="cbadge cbadge-green">Met</span></td><td>+185</td>
+              </tr>
+              <tr>
+                <td><div class="tdm"><span>🏃</span> Exercise</div></td>
+                <td>105 min</td><td>150 min/wk</td>
+                <td><span class="cbadge cbadge-amber">Not Met</span></td><td>+187</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ROW 3: TIERS + CHART -->
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-hd">
+            <div><h3 class="card-title">Discount Tiers</h3><div class="card-sub">Weekly minimums to unlock each level</div></div>
+          </div>
+          <div class="reqs" id="reqsList">
+            <div class="req rmet"><span class="req-chk">✓</span><div class="req-body"><strong>Bronze — 5% off ($17.80/mo)</strong><span>Meet any 1 of 4 markers per week</span></div></div>
+            <div class="req rmet"><span class="req-chk">✓</span><div class="req-body"><strong>Silver — 8% off ($28.48/mo)</strong><span>Meet any 2 of 4 markers per week</span></div></div>
+            <div class="req rmet"><span class="req-chk">✓</span><div class="req-body"><strong>Gold — 12% off ($42.72/mo) ← You are here</strong><span>Meet any 3 of 4 markers per week</span></div></div>
+            <div class="req rmiss"><span class="req-chk">○</span><div class="req-body"><strong>Platinum — 18% off ($64.08/mo)</strong><span>Meet all 4 markers — need +45 min exercise</span></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <div><h3 class="card-title">12-Month Savings Projection</h3><div class="card-sub">Cumulative savings vs. standard rate</div></div>
+            <span class="cbadge cbadge-green" id="annBadge">$512 saved YTD</span>
+          </div>
+          <div class="chart-wrap"><canvas id="projChart"></canvas></div>
+          <div class="chart-legend">
+            <div class="leg"><div class="leg-dot" style="background:var(--stone-mid)"></div>Standard ($356/mo)</div>
+            <div class="leg"><div class="leg-dot" style="background:var(--green-light)"></div>Your rate (current tier)</div>
+            <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>Platinum potential</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const BASE = 356;
+const TIERS = [
+  { name:'Bronze',   emoji:'🥉', met:1, pct:0.05, cls:'tier-bronze' },
+  { name:'Silver',   emoji:'🥈', met:2, pct:0.08, cls:'tier-silver' },
+  { name:'Gold',     emoji:'🥇', met:3, pct:0.12, cls:'tier-gold'   },
+  { name:'Platinum', emoji:'🏆', met:4, pct:0.18, cls:'tier-green'  },
+];
+const SCORES = {0:400, 1:540, 2:620, 3:742, 4:831};
+
+let state = { steps:7824, sleep:7.4, bp:124, exercise:105 };
+
+function metCount(s) {
+  return (s.steps>=7000?1:0)+(s.sleep>=7?1:0)+(s.bp<130?1:0)+(s.exercise>=150?1:0);
+}
+function getTier(n) { return [...TIERS].reverse().find(t=>n>=t.met)||null; }
+function fmt2(n)    { return n.toFixed(2); }
+
+/* Ring */
+function animateRing(score) {
+  const r = document.getElementById('mainRing');
+  const el = document.getElementById('mainScore');
+  const circ = 2*Math.PI*43;
+  r.style.strokeDasharray = circ;
+  r.style.strokeDashoffset = circ;
+  const target = circ - (score/900)*circ;
+  setTimeout(()=>{ r.style.strokeDashoffset = target; }, 80);
+  let cur = parseInt(el.textContent)||400, steps=40, i=0;
+  const iv = setInterval(()=>{
+    i++; el.textContent = Math.round(cur + (score-cur)*(i/steps));
+    if(i>=steps) clearInterval(iv);
+  },18);
+}
+
+/* Recalc */
+function recalculate() {
+  const s = parseFloat(document.getElementById('in-steps').value)    || state.steps;
+  const sl= parseFloat(document.getElementById('in-sleep').value)    || state.sleep;
+  const b = parseFloat(document.getElementById('in-bp').value)       || state.bp;
+  const e = parseFloat(document.getElementById('in-exercise').value) || state.exercise;
+  state = {steps:s, sleep:sl, bp:b, exercise:e};
+  updateUI();
+  showToast('VitalScore updated');
+}
+
+function updateUI() {
+  const {steps,sleep,bp,exercise} = state;
+  const met  = metCount(state);
+  const tier = getTier(met);
+  const score= SCORES[met]||400;
+  const disc = tier ? tier.pct : 0;
+  const prem = BASE*(1-disc);
+  const sav  = BASE-prem;
+
+  animateRing(score);
+
+  /* tier badge */
+  const tb = document.getElementById('tierBadge');
+  tb.textContent = tier ? `${tier.emoji} ${tier.name} Tier` : 'No Tier';
+  tb.className   = 'score-tier ' + (tier ? tier.cls : 'tier-silver');
+
+  /* financials strip */
+  document.getElementById('currPremium').textContent = `$${fmt2(prem)}`;
+  document.getElementById('savAmt').textContent      = `saving $${fmt2(sav)}/mo`;
+  document.getElementById('discVal').textContent     = `–$${fmt2(sav)}`;
+  document.getElementById('discDesc').textContent    = `${tier?tier.name:'No'} Tier — ${met}/4 benchmarks met`;
+  document.getElementById('premVal').textContent     = `$${fmt2(prem)}`;
+  document.getElementById('annBadge').textContent    = `$${Math.round(sav*12).toLocaleString()} saved/year`;
+
+  /* next tier panel */
+  const next = TIERS.find(t=>t.met>met);
+  const np   = document.getElementById('nextPanel');
+  if(next){
+    const extra = BASE*next.pct - BASE*disc;
+    np.innerHTML = `
+      <div class="next-lbl">To Reach ${next.name}</div>
+      <div class="next-row"><span class="next-icon">📋</span><span>Need <span class="next-hi">${next.met-met} more marker${next.met-met>1?'s':''}</span></span></div>
+      <div class="next-row"><span class="next-icon">📈</span><span>Score gap: <span class="next-hi">${SCORES[next.met]-score} pts</span></span></div>
+      <div class="next-row"><span class="next-icon">💰</span><span>Unlocks extra <span class="next-hi green">$${fmt2(extra)}/mo</span></span></div>`;
+  } else {
+    np.innerHTML = `
+      <div class="next-lbl">Platinum Achieved 🏆</div>
+      <div class="next-row" style="color:var(--green);font-weight:600">All 4 benchmarks met!</div>
+      <div class="next-row"><span class="next-icon">💰</span><span>Maximum discount: <span class="next-hi green">18% off</span></span></div>`;
+  }
+
+  /* week badge */
+  const wb = document.getElementById('weekBadge');
+  wb.textContent = `${met}/4 Met`;
+  wb.className   = 'cbadge '+(met>=4?'cbadge-green':met>=3?'cbadge-amber':'cbadge-red');
+
+  /* marker bars */
+  function updM(key, val, tgt, label, good) {
+    const pct = Math.min(val/tgt*100, 100);
+    const bar = document.getElementById('bar-'+key);
+    const velEl= document.getElementById('val-'+key);
+    const stel = document.getElementById('st-'+key);
+    bar.style.width = pct+'%';
+    bar.className   = 'm-bar-fill '+(good?'fill-g':val/tgt>0.6?'fill-a':'fill-r');
+    velEl.textContent = label;
+    if(good){ stel.textContent='✓ Met'; stel.className='m-st st-met'; }
+    else {
+      const msg = key==='exercise'?`${Math.ceil(150-val)} min short`
+                : key==='sleep'  ?`${(7-val).toFixed(1)}h short`
+                : key==='bp'     ?'Above target'
+                :                 `${Math.ceil(7000-val).toLocaleString()} short`;
+      stel.textContent = msg;
+      stel.className = 'm-st '+(val/tgt>0.7?'st-close':'st-miss');
+    }
+  }
+  updM('steps',   steps,   7000,   steps.toLocaleString(),    steps>=7000);
+  updM('sleep',   sleep,   7,      sleep.toFixed(1)+' hrs',   sleep>=7);
+  updM('bp',      bp<130?bp:130, 130, `${Math.round(bp)}/79`, bp<130);
+  updM('exercise',exercise,150,  `${Math.round(exercise)} min`, exercise>=150);
+
+  /* breakdown table */
+  const rows = [
+    {ico:'👟',name:'Daily Steps',    val:`${Math.round(steps).toLocaleString()} / day`, bench:'7,000 / day', met:steps>=7000},
+    {ico:'💤',name:'Sleep',          val:`${sleep.toFixed(1)} hrs`,                     bench:'7.0 hrs',     met:sleep>=7},
+    {ico:'🩺',name:'Blood Pressure', val:`${Math.round(bp)}/79 mmHg`,                  bench:'<130/80',     met:bp<130},
+    {ico:'🏃',name:'Exercise',       val:`${Math.round(exercise)} min`,                 bench:'150 min/wk',  met:exercise>=150},
+  ];
+  document.getElementById('btBody').innerHTML = rows.map(r=>`
+    <tr>
+      <td><div class="tdm"><span>${r.ico}</span>${r.name}</div></td>
+      <td>${r.val}</td><td>${r.bench}</td>
+      <td><span class="cbadge ${r.met?'cbadge-green':'cbadge-amber'}">${r.met?'Met':'Not Met'}</span></td>
+      <td>+${Math.round(180 + Math.random()*10)}</td>
+    </tr>`).join('');
+
+  /* tier reqs list */
+  const reqs = document.querySelectorAll('.req');
+  TIERS.forEach((t,i)=>{
+    const isMet = met >= t.met;
+    reqs[i].className = 'req '+(isMet?'rmet':'rmiss');
+    reqs[i].querySelector('.req-chk').textContent = isMet?'✓':'○';
+    const disc_amt = fmt2(BASE*t.pct);
+    const here = met===t.met?' ← You are here':(met>t.met&&i===TIERS.length-1?' ← You are here':'');
+    const youHere = (tier&&tier.name===t.name)?' ← You are here':'';
+    reqs[i].querySelector('strong').textContent = `${t.name} — ${Math.round(t.pct*100)}% off ($${disc_amt}/mo)${youHere}`;
+  });
+
+  updateChart(disc, sav);
+}
+
+/* Chart */
+let myChart;
+function buildChart() {
+  const ctx = document.getElementById('projChart').getContext('2d');
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  myChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: months,
+      datasets:[
+        { label:'Standard', data:Array(12).fill(BASE),
+          borderColor:'#e2ddd7', borderDash:[4,4], borderWidth:1.5, pointRadius:0, tension:0, fill:false },
+        { label:'Your Rate', data:Array(12).fill(0),
+          borderColor:'#40916c', backgroundColor:'rgba(64,145,108,0.08)',
+          borderWidth:2, pointRadius:2.5, pointBackgroundColor:'#40916c', fill:true, tension:0.35 },
+        { label:'Platinum', data:Array(12).fill(Math.round(BASE*0.82*100)/100),
+          borderColor:'#1a4731', borderDash:[3,3], borderWidth:1.5, pointRadius:0, tension:0, fill:false },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{
+        callbacks:{ label: c=>`$${c.parsed.y.toFixed(2)}/mo` }
+      }},
+      scales:{
+        y:{ grid:{color:'#f0ece8'}, ticks:{callback:v=>`$${v}`,font:{size:10},color:'#9a9a9a'}, min:270, max:370 },
+        x:{ grid:{display:false}, ticks:{font:{size:10},color:'#9a9a9a'} }
+      }
+    }
+  });
+}
+
+function updateChart(disc) {
+  if(!myChart) return;
+  const prem = BASE*(1-disc);
+  // Simulate gradual improvement from enrollment
+  const data=[];
+  let p = BASE*0.98;
+  for(let i=0;i<12;i++){
+    p = p + (prem-p)*0.3;
+    data.push(Math.round(p*100)/100);
+  }
+  data[11] = Math.round(prem*100)/100;
+  myChart.data.datasets[1].data = data;
+  myChart.data.datasets[2].data = Array(12).fill(Math.round(BASE*0.82*100)/100);
+  myChart.update('active');
+}
+
+/* Upload */
+const uploadData = {
+  apple:  {steps:8200, sleep:7.6, bp:122, exercise:120},
+  fitbit: {steps:7600, sleep:7.1, bp:126, exercise:130},
+  strava: {steps:7824, sleep:7.4, bp:124, exercise:165},
+  garmin: {steps:8050, sleep:7.3, bp:121, exercise:140},
+};
+function handleUpload(key, name) {
+  const el = document.getElementById('up-'+key);
+  if(el.classList.contains('done')) return;
+  el.classList.add('done');
+  document.getElementById('ok-'+key).textContent = '✓ Synced';
+  const d = uploadData[key];
+  document.getElementById('in-steps').value   = d.steps;
+  document.getElementById('in-sleep').value   = d.sleep;
+  document.getElementById('in-bp').value      = d.bp;
+  document.getElementById('in-exercise').value= d.exercise;
+  showToast(`${name} data loaded — click Update to recalculate`);
+}
+
+function simulateSync() {
+  showToast('Syncing Apple Health…');
+  setTimeout(()=>{
+    document.getElementById('in-steps').value   = 8100;
+    document.getElementById('in-sleep').value   = 7.7;
+    document.getElementById('in-bp').value      = 121;
+    document.getElementById('in-exercise').value= 155;
+    document.getElementById('up-apple').classList.add('done');
+    document.getElementById('ok-apple').textContent = '✓ Synced';
+    showToast('Synced — click Update to recalculate');
+  }, 1200);
+}
+
+/* Toast */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* Init */
+window.addEventListener('load', ()=>{
+  buildChart();
+  animateRing(742);
+  updateChart(0.12);
+  document.querySelectorAll('.m-bar-fill').forEach(b=>{
+    const w=b.style.width; b.style.width='0';
+    setTimeout(()=>{ b.style.width=w; },400);
+  });
+});
+</script>
+</body>
+</html>

@@ -641,14 +641,14 @@ function updateUI() {
     const extra = BASE*next.pct - BASE*disc;
     np.innerHTML = `
       <div class="next-lbl">To Reach ${next.name}</div>
-      <div class="next-row"><span class="next-icon">📋</span><span>Need <span class="next-hi">${next.met-met} more marker${next.met-met>1?'s':''}</span></span></div>
-      <div class="next-row"><span class="next-icon">📈</span><span>Score gap: <span class="next-hi">${SCORES[next.met]-score} pts</span></span></div>
-      <div class="next-row"><span class="next-icon">💰</span><span>Unlocks extra <span class="next-hi green">$${fmt2(extra)}/mo</span></span></div>`;
+      <div class="next-row"><span class="next-icon"></span><span>Need <span class="next-hi">${next.met-met} more marker${next.met-met>1?'s':''}</span></span></div>
+      <div class="next-row"><span class="next-icon"></span><span>Score gap: <span class="next-hi">${SCORES[next.met]-score} pts</span></span></div>
+      <div class="next-row"><span class="next-icon"></span><span>Unlocks extra <span class="next-hi green">$${fmt2(extra)}/mo</span></span></div>`;
   } else {
     np.innerHTML = `
       <div class="next-lbl">Platinum Achieved 🏆</div>
       <div class="next-row" style="color:var(--green);font-weight:600">All 4 benchmarks met!</div>
-      <div class="next-row"><span class="next-icon">💰</span><span>Maximum discount: <span class="next-hi green">18% off</span></span></div>`;
+      <div class="next-row"><span class="next-icon"></span><span>Maximum discount: <span class="next-hi green">18% off</span></span></div>`;
   }
 
   /* week badge */
